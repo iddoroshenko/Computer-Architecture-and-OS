@@ -1,0 +1,5 @@
+cmd.txt
+daemon
+daemon.c
+log.txt
+out.txt

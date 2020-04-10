@@ -46,13 +46,13 @@ int Daemon(char** argv){
 	int fd_read = open(argv[1], O_CREAT|O_RDWR, S_IRWXU);
 	int count = read(fd_read, buf, sizeof(buf));
 	close(fd_read);
-	buf[count-1] = '\0';										
-
-	char** res;
+	buf[count-1] = '\0';
+	char** res = (char**)malloc(sizeof(char) * 100);
 	char* tmp;
 	int i = 0;
 	count = 0;
-	while(tmp = strtok(buf + i,' ')){
+    char delim = ' ';
+	while(tmp = strtok(buf + i, &delim)){
 		res[count++] = tmp;
 		i += sizeof(tmp);
 	}
@@ -62,8 +62,7 @@ int Daemon(char** argv){
             lseek(fd, 0, SEEK_END);											
             write(fd, logText, sizeof(logText));							
             close(fd);
-            syslog(LOG_NOTICE, "Daemon caught SIGINT");						
-
+            syslog(LOG_NOTICE, "Daemon caught SIGINT");	
             pid_t p;
             if((p = fork()) == 0 ){											// Форкаю, чтобы демон не умирал после вызова execv
 
@@ -77,7 +76,7 @@ int Daemon(char** argv){
             sigint_h = 0;
         }
         if(sigterm_h) {
-
+            free(res);
             char logText[] = "Daemon caught SIGTERM and dead\n";
             int fd = open("log.txt", O_CREAT|O_RDWR, S_IRWXU);
             lseek(fd, 0, SEEK_END);
