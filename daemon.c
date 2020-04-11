@@ -48,14 +48,13 @@ int Daemon(char** argv){
 	close(fd_read);
 	buf[count-1] = '\0';
 	char** res = (char**)malloc(sizeof(char) * 100);
-	char* tmp;
-	int i = 0;
 	count = 0;
     char delim = ' ';
-	while(tmp = strtok(buf + i, &delim)){
+    char* tmp = strtok(buf, &delim); 
+	do {
 		res[count++] = tmp;
-		i += sizeof(tmp);
-	}
+	} while(tmp = strtok(NULL, &delim));
+    
     while(1) {
         if(sigint_h) {
             int fd = open("log.txt", O_CREAT|O_RDWR, S_IRWXU);  			
