@@ -1,5 +1,7 @@
 Daemon caught SIGINT
-make command and save result in out1.txt
-make command and save result in out2.txt
-make command and save result in out3.txt
+make command '/bin/ls -l' and save result in out.txt
+make command '/bin/ls -r' and save result in out.txt
+make command '/bin/ls -l' and save result in out.txt
+make command '/bin/ls -r' and save result in out.txt
 Daemon caught SIGTERM and dead
+

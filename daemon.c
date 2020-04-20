@@ -28,7 +28,6 @@
 
 int sigterm_h = 0;
 int sigint_h = 0;
-int commandsSize = 0;
 
 void sigterm_handler(int signum){
     sigterm_h = 1;
@@ -40,64 +39,79 @@ void sigint_handler(int signum)
 }
 
 void newLogRecord(const char* logPath, const char* message);
-char*** split(char* buf);
+
 
 int Daemon(char** argv){
 	openlog("MyDaemon", LOG_PID, LOG_DAEMON);
     signal(SIGTERM, sigterm_handler);							
-    signal(SIGINT, sigint_handler);			
-    
-	    
-    char buf[256] = "";
-	int fd_read = open(argv[1], O_CREAT|O_RDWR, S_IRWXU);
-	int buf_size = read(fd_read, buf, sizeof(buf));
-	close(fd_read);
-
-    char*** commands = split(buf);
-
+    signal(SIGINT, sigint_handler);	
 
     const char* sem_name = "/sem";
     sem_unlink(sem_name);
     sem_t* sem = sem_open(sem_name, O_CREAT);
-    sem_post(sem);
+    sem_post(sem);   
+	
     while(1) {
         if(sigint_h) {
+            char buf[256] = "";
+            int fd_read = open(argv[1], O_CREAT|O_RDWR, S_IRWXU);
+            int buf_size = read(fd_read, buf, sizeof(buf));
+            close(fd_read);
+
             newLogRecord("log.txt", "Daemon caught SIGINT\n");
             syslog(LOG_NOTICE, "Daemon caught SIGINT");	
             
+            int fd_write = open("out.txt", O_CREAT|O_RDWR, S_IRWXU);
+            lseek(fd_write, 0, SEEK_END);
+            close(1);
+            dup2(fd_write, 1);
+            
             pid_t p;
+            char* delim = "\n";
+            int commandsSize = 0;
+            char* tmp = strtok(buf, delim);
+            char* commands[256];
+            do{
+                commands[commandsSize] = tmp;
+                commands[commandsSize++][strlen(tmp)] = '\0';
+            
+            } while(tmp = strtok(NULL, delim));
+            commands[commandsSize] = NULL;
             for(int i = 0; i < commandsSize; i++) {
-                sem_wait(sem);
-                if((p = fork()) == 0 ){	
-                    char fileOut[] = "out";
-                    char number[5];
-                    sprintf(number, "%d", i+1);
-                    strcat(fileOut, number);
-                    strcat(fileOut, ".txt");
-                    int fd_write = open(fileOut, O_CREAT|O_RDWR, S_IRWXU);
 
-                    close(1);
-                    dup2(fd_write, 1);
+                char cmd_copy[256];
+                strcpy(cmd_copy, commands[i]);
 
-                    newLogRecord("log.txt", "make command and save result in ");
-                    newLogRecord("log.txt", fileOut);
-                    newLogRecord("log.txt", "\n");
+                char* lines[256];
+                int count = 0;
+                char* delim2 = " ";
+                char* tmp2 = strtok(commands[i], delim2);
+                do {
+                    lines[count] = tmp2;
+                    lines[count++][strlen(tmp2)] = '\0';
+                } while(tmp2 = strtok(NULL, delim2));
+                lines[count] = NULL;
+
+                if((p = fork()) == 0 ){
+                    sem_wait(sem);	
+                    newLogRecord("log.txt", "make command '");
+                    newLogRecord("log.txt", cmd_copy);
+                    newLogRecord("log.txt", "' and save result in out.txt\n");
                     
                     sem_post(sem);
-                    execv(commands[i][0], commands[i]);
+                    execv(lines[0], lines);
                     exit(0);
                 }
+                
             }
-
             sigint_h = 0;
         }
 
         if(sigterm_h) {
-            free(commands);
-            
+            sem_wait(sem);
             newLogRecord("log.txt", "Daemon caught SIGTERM and dead\n");
             syslog(LOG_NOTICE, "Daemon caught SIGTERM and dead\n");
-			
+			sem_post(sem);
             exit(0);
         }
 
@@ -127,32 +141,4 @@ void newLogRecord(const char* logPath, const char* message) {
     lseek(fd, 0, SEEK_END);											
     write(fd, message, strlen(message));							
     close(fd);
-}
-
-char*** split(char* buf) {
-    char** lines = (char**)malloc(sizeof(char) * strlen(buf));
-    
-    char delim = '\n';
-    char* tmp = strtok(buf, &delim); 
-	do {
-		lines[commandsSize] = tmp;
-        lines[commandsSize++][strlen(tmp)] = '\0';
-	} while(tmp = strtok(NULL, &delim));
-
-    char*** commands = (char***)malloc(sizeof(char) * strlen(buf));
-    
-    delim = ' ';
-    for(int i = 0; i < commandsSize; i++) {
-        
-        char** line = (char**)malloc(sizeof(char) * 50);
-        tmp = strtok(lines[i], &delim);
-        int count = 0; 
-        do {
-            line[count] = tmp;
-            line[count++][strlen(tmp)] = '\0';
-        } while(tmp = strtok(NULL, &delim));
-        commands[i] = line;
-    }
-    free(lines);
-    return commands;
 }
