@@ -98,9 +98,12 @@ int Daemon(char** argv){
                     newLogRecord("log.txt", cmd_copy);
                     newLogRecord("log.txt", "' and save result in out.txt\n");
                     
-                    sem_post(sem);
                     execv(lines[0], lines);
                     exit(0);
+                } else {
+                    int status = 0;
+                    wait(&status);
+                    sem_post(sem);
                 }
                 
             }
