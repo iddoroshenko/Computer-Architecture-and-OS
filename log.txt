@@ -1,13 +1,11 @@
 Daemon caught SIGINT
 make command '/bin/ls -r' and save result in out.txt
 make command '/bin/ls -l' and save result in out.txt
-make command '/bin/ls -r -l' and save result in out.txt
+make command '/bin/ls -h' and save result in out.txt
+make command '/bin/ls -h' and save result in out.txt
 Daemon caught SIGINT
 make command '/bin/ls -r' and save result in out.txt
 make command '/bin/ls -l' and save result in out.txt
-make command '/bin/ls -r -l' and save result in out.txt
-Daemon caught SIGINT
-make command '/bin/ls -r' and save result in out.txt
-make command '/bin/ls -l' and save result in out.txt
-make command '/bin/ls -r -l' and save result in out.txt
+make command '/bin/ls -h' and save result in out.txt
+make command '/bin/ls -h' and save result in out.txt
 Daemon caught SIGTERM and dead

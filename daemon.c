@@ -28,7 +28,7 @@
 
 int sigterm_h = 0;
 int sigint_h = 0;
-
+sem_t* sem;
 void sigterm_handler(int signum){
     sigterm_h = 1;
 }
@@ -38,17 +38,22 @@ void sigint_handler(int signum)
     sigint_h = 1;
 }
 
+void sigchld_handler(int signum) {
+    sem_post(sem);
+}
+
 void newLogRecord(const char* logPath, const char* message);
 
 
 int Daemon(char** argv){
 	openlog("MyDaemon", LOG_PID, LOG_DAEMON);
-    signal(SIGTERM, sigterm_handler);							
-    signal(SIGINT, sigint_handler);	
-
+    signal(SIGTERM, sigterm_handler);
+    signal(SIGINT, sigint_handler);
+    signal(SIGCHLD, sigchld_handler);
+    
     const char* sem_name = "/sem";
     sem_unlink(sem_name);
-    sem_t* sem = sem_open(sem_name, O_CREAT);
+    sem = sem_open(sem_name, O_CREAT);
     sem_post(sem);   
 	
     while(1) {
@@ -100,12 +105,7 @@ int Daemon(char** argv){
                     
                     execv(lines[0], lines);
                     exit(0);
-                } else {
-                    int status = 0;
-                    wait(&status);
-                    sem_post(sem);
-                }
-                
+                } 
             }
             sigint_h = 0;
         }

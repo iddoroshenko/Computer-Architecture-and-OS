@@ -1,4 +1,4 @@
 /bin/ls -r
 /bin/ls -l
-/bin/ls -r -l
-
+/bin/ls -h
+/bin/ls -h
